@@ -20,6 +20,29 @@ export interface IEvent extends Document {
   updatedAt: Date;
 }
 
+// JSON-serializable shape of an Event, safe to pass from a Server Component
+// into a Client Component. A Mongoose document (or a `.lean()` result) still
+// holds ObjectId and Date instances, which cannot cross that boundary.
+export type PlainEvent = {
+  _id: string;
+  title: string;
+  slug: string;
+  description: string;
+  overview: string;
+  image: string;
+  venue: string;
+  location: string;
+  date: string;
+  time: string;
+  mode: string;
+  audience: string;
+  agenda: string[];
+  organizer: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 const EventSchema = new Schema<IEvent>(
   {
     title: {

@@ -1,4 +1,5 @@
 import {NextRequest, NextResponse} from "next/server";
+import { revalidateTag } from 'next/cache';
 import { v2 as cloudinary } from 'cloudinary';
 
 import connectDB from "@/lib/mongodb";
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
 
         try {
             event = Object.fromEntries(formData.entries());
-        } catch (e) {
+        } catch {
             return NextResponse.json({ message: 'Invalid JSON data format'}, { status: 400 })
         }
 
@@ -22,8 +23,8 @@ export async function POST(req: NextRequest) {
 
         if(!file) return NextResponse.json({ message: 'Image file is required'}, { status: 400 })
 
-        let tags = JSON.parse(formData.get('tags') as string);
-        let agenda = JSON.parse(formData.get('agenda') as string);
+        const tags = JSON.parse(formData.get('tags') as string);
+        const agenda = JSON.parse(formData.get('agenda') as string);
 
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
@@ -44,9 +45,23 @@ export async function POST(req: NextRequest) {
             agenda: agenda,
         });
 
+        // The home page and event pages cache for an hour and only fully expire
+        // after a day; without this a new event would not appear until then.
+        // 'max' keeps the invalidation valid for longer than any cached entry.
+        revalidateTag('events', 'max');
+
         return NextResponse.json({ message: 'Event created successfully', event: createdEvent }, { status: 201 });
     } catch (e) {
         console.error(e);
+
+        // Duplicate slug — the title collides with an existing event.
+        if (typeof e === 'object' && e !== null && (e as { code?: number }).code === 11000) {
+            return NextResponse.json(
+                { message: 'An event with this title already exists. Try a different title.' },
+                { status: 409 }
+            );
+        }
+
         return NextResponse.json({ message: 'Event Creation Failed', error: e instanceof Error ? e.message : 'Unknown'}, { status: 500 })
     }
 }

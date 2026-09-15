@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(jobs -l)",
+      "Bash(kill %1)",
+      "Bash(node -e ' *)",
+      "Bash(ipconfig /all)",
+      "PowerShell(Get-DnsClientServerAddress | Where-Object {$_.ServerAddresses.Count -gt 0} | Format-Table InterfaceAlias, AddressFamily, ServerAddresses -AutoSize)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s http://localhost:3000 -o /tmp/home.html)",
+      "Bash(curl -s http://localhost:3000/api/events)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\")"
+    ]
+  }
+}

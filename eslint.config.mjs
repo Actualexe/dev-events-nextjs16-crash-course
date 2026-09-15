@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Snapshots of pre-fix source kept for review — not part of the app.
+    "fix-review/**",
   ]),
 ]);
 

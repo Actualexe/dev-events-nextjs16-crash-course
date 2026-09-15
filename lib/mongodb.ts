@@ -1,3 +1,4 @@
+import dns from 'node:dns';
 import mongoose from 'mongoose';
 
 // Define the connection cache type
@@ -8,7 +9,6 @@ type MongooseCache = {
 
 // Extend the global object to include our mongoose cache
 declare global {
-  // eslint-disable-next-line no-var
   var mongoose: MongooseCache | undefined;
 }
 
@@ -16,7 +16,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 
 
 // Initialize the cache on the global object to persist across hot reloads in development
-let cached: MongooseCache = global.mongoose || { conn: null, promise: null };
+const cached: MongooseCache = global.mongoose || { conn: null, promise: null };
 
 if (!global.mongoose) {
   global.mongoose = cached;
@@ -46,8 +46,17 @@ async function connectDB(): Promise<typeof mongoose> {
     };
 
     // Create a new connection promise
-    cached.promise = mongoose.connect(MONGODB_URI!, options).then((mongoose) => {
-      return mongoose;
+    cached.promise = mongoose.connect(MONGODB_URI!, options).catch((error) => {
+      // mongodb+srv:// URIs need a DNS SRV lookup before they can connect.
+      // Some machines have a broken loopback DNS resolver (e.g. 127.0.0.1
+      // with nothing listening) that the OS itself doesn't use, which breaks
+      // that lookup even though the network is otherwise fine. Retry once
+      // against public DNS resolvers before giving up.
+      if (error?.code === 'ECONNREFUSED' && error?.syscall === 'querySrv') {
+        dns.setServers(['1.1.1.1', '8.8.8.8']);
+        return mongoose.connect(MONGODB_URI!, options);
+      }
+      throw error;
     });
   }
 

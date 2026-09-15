@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# pre/post-fix source snapshots kept for local review
+/fix-review
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
